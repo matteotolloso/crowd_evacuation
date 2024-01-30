@@ -1,4 +1,4 @@
-from building_model import BuildingModel
+from model import BuildingModel
 import seaborn as sns
 import numpy as np
 import mesa
@@ -11,7 +11,7 @@ agents = 2000
 def agent_portrayal(agent):
     portrayal = {
         "Shape": "circle",
-        "Color": "red",
+        "Color": "orange",
         "Filled": "true",
         "Layer": 0,
         "r": 1,
@@ -21,8 +21,8 @@ def agent_portrayal(agent):
         # portrayal["Layer"] = 1
         portrayal["r"] = 1
     
-    if agent.type == "exit":
-        portrayal["Color"] = "green"
+    if agent.type == "UninformedPersonAgent":
+        portrayal["Color"] = "red"
         portrayal["r"] = 1
         # portrayal["Layer"] = 1
 
@@ -38,7 +38,8 @@ grid = mesa.visualization.CanvasGrid(agent_portrayal, width, height, 1000, 1000)
 server = mesa.visualization.ModularServer(
     BuildingModel, [grid], "Building_model", 
     {"N": agents, 
-     "path" : './dataset/charleston_road.txt'
+     "path" : './dataset/charleston_road.txt',
+     "perc_uninformed_agents" : 0.5,
     }
 )
 server.port = 8521  # the default
