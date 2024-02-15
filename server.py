@@ -20,6 +20,7 @@ def agent_portrayal(agent):
         portrayal["Color"] = "black"
         # portrayal["Layer"] = 1
         portrayal["r"] = 1
+        # return None # TODO remove
     
     if agent.type == "UninformedPersonAgent":
         portrayal["Color"] = "red"
@@ -39,7 +40,8 @@ server = mesa.visualization.ModularServer(
     BuildingModel, [grid], "Building_model", 
     {"N": agents, 
      "path" : './dataset/charleston_road.txt',
-     "perc_uninformed_agents" : 0.5,
+     "perc_uninformed_agents" : 0.2,
+     "probability_optimal" : 0.95,
     }
 )
 server.port = 8521  # the default

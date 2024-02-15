@@ -10,7 +10,7 @@ from agent import StaticAgent, InformedPersonAgent, UninformedPersonAgent
 class BuildingModel(mesa.Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, path, perc_uninformed_agents):
+    def __init__(self, N, path, perc_uninformed_agents, probability_optimal):
         super().__init__()
         self.num_agents = N
         self.perc_uninformed_agents = perc_uninformed_agents
@@ -56,7 +56,7 @@ class BuildingModel(mesa.Model):
         # informed agents
         for i in range(int(( 1- self.perc_uninformed_agents) * self.num_agents)):
             pos = self.random.choice(list(self.grid.empties))
-            a = InformedPersonAgent(i + self.static_agent_count, self)
+            a = InformedPersonAgent(i + self.static_agent_count, self, probability_optimal)
             self.schedule.add(a)
             self.grid.place_agent(a, pos)
 
@@ -67,31 +67,20 @@ class BuildingModel(mesa.Model):
             model_reporters={"Test1": lambda x:0}, agent_reporters={"Test2": lambda x:0}
         )
 
-        self.static_floor_field = {}
-
         static_floor_field_path = f'./cache/static_floor_field_{Path(self.path).stem}.pkl'
-
         if os.path.exists(static_floor_field_path):
             self.static_floor_field = pickle.load(open(static_floor_field_path, 'rb'))
         else:
-            astar = utils.AStar(self.planimetry)
-            for j in range(self.height):  
-                for i in range(self.width):
-                    if m2n_v(self.planimetry, (i, j)) == '.' and  (i, j) not in self.static_floor_field.keys():
-                        _, path = astar(
-                            start = (i, j), 
-                            end = self.exits[0]
-                        )
-
-                        print(f'path from {(i, j)} to {self.exits[0]}')
-    
-                        for iter in range(len(path) -1):
-                            self.static_floor_field[path[iter]] = path[iter + 1]
-
+            self.static_floor_field = utils.static_floor_field(self.planimetry, self.exits)
             pickle.dump(self.static_floor_field, open(static_floor_field_path, 'wb'))
                         
-        self.static_floor_field[self.exits[0]] = self.exits[0]
 
+        self.wall_distance = utils.distance_to_nearest_hash(self.planimetry)
+
+        print(len(self.wall_distance.keys()))
+        print(self.height * self.width )
+
+        
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()

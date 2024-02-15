@@ -1,6 +1,7 @@
 import numpy as np
 import queue
 import math
+from collections import deque
 
 
 def m2n_v(np_matrix, m_pos):
@@ -130,5 +131,57 @@ def compute_similar_directions(pos1, pos2):
 def compute_direction(pos1, pos2):
     """Given a start position and an end position, return the direction """
     
-    return (pos2[0] - pos1[0], pos2[1] - pos1[1])
+    return [pos2[0] - pos1[0], pos2[1] - pos1[1]]
+
+def compute_sff(planimetry, exits):
+    static_floor_field = {}
+    astar = AStar(planimetry)
+    for j in range(planimetry.shape[0]):  
+        for i in range(planimetry.shape[1]):
+            if m2n_v(planimetry, (i, j)) == '.' and  (i, j) not in static_floor_field.keys():
+                _, path = astar(
+                    start = (i, j), 
+                    end = exits[0]
+                )    
+                for iter in range(len(path) -1):
+                    static_floor_field[path[iter]] = path[iter + 1]
+    static_floor_field[exits[0]] = exits[0]
+
+    return static_floor_field
+
+def distance_to_nearest_hash(planimetry):
+    rows, cols = planimetry.shape
+    distances = {}
+
+    def is_valid(x, y):
+        return 0 <= x < cols and 0 <= y < rows
+
+    queue = deque()
+
+    # Initialize distances for "#" cells and add them to the queue
+    for i in range(cols):
+        for j in range(rows):
+            if m2n_v(planimetry, (i, j)) == "#":
+                distances[(i, j)] = 0
+                queue.append((i, j))
+            else:
+                distances[(i, j)] = -1
+
+    while queue:
+        x, y = queue.popleft()
+        for dx, dy in [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)]:
+            nx, ny = x + dx, y + dy
+            if is_valid(nx, ny) and distances[(nx, ny)] == -1:
+                distances[(nx, ny)] = distances[(x, y)] + math.dist((nx, ny), (x, y))
+                queue.append((nx, ny))
+
+    
+
+    return distances
+    
+    distance_translated = {}
+    for k, v in distances.items():
+        distance_translated[n2m_c(matrix, k)] = v 
+
+    return distance_translated
 
