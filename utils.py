@@ -108,15 +108,39 @@ class AStar:
         path.reverse()
         return path
     
+def static_floor_field(planimetry, exit):
+    astar = AStar(planimetry)
+    rows, cols = planimetry.shape
+    
+    static_floor_field = {}
+    
+    for i in range(cols):  
+        for j in range(rows):
+            if m2n_v(planimetry, (i, j)) == '.' and  (i, j) not in static_floor_field.keys():
+                _, path = astar(
+                    start = (i, j), 
+                    end = exit
+                )
+                    
+                for iter in range(len(path) -1):
+                    static_floor_field[path[iter]] = path[iter + 1]
+            
+            print(f"Done {i * cols + j}/{cols * rows}")
+                
+
+    static_floor_field[exit] = exit
+
+    return static_floor_field
 
 
-def compute_similar_directions(pos1, pos2): 
+def compute_similar_directions_3(pos1, pos2): 
     """Given a start position and an end position, return similar alternative directions """
     
     if(pos1[0] == pos2[0]): # i was moving on the y axis, similar cells are the ones on the left and on the right
-        return [(pos1[0] - 1, pos1[1]), (pos1[0] + 1, pos1[1])]
+        return [(pos2[0] - 1, pos2[1]), (pos2[0] + 1, pos2[1])]
     if(pos1[1] == pos2[1]): # i was moving on the x axis, similar cells are the ones on the top and on the bottom
-        return [(pos1[0], pos1[1] - 1), (pos1[0], pos1[1] + 1)]
+        return [(pos2[0], pos2[1] - 1), (pos2[0], pos2[1] + 1)]
+    
     if (pos1[0] < pos2[0] and pos1[1] < pos2[1]): # i was moving on the top right corner, similar cells are the ones on the top and on the right
         return [(pos1[0], pos1[1] + 1), (pos1[0] + 1, pos1[1])]
     if (pos1[0] < pos2[0] and pos1[1] > pos2[1]): # i was moving on the bottom right corner, similar cells are the ones on the bottom and on the right
@@ -125,6 +149,29 @@ def compute_similar_directions(pos1, pos2):
         return [(pos1[0], pos1[1] + 1), (pos1[0] - 1, pos1[1])]
     if (pos1[0] > pos2[0] and pos1[1] > pos2[1]): # i was moving on the bottom left corner, similar cells are the ones on the bottom and on the left
         return [(pos1[0], pos1[1] - 1), (pos1[0] - 1, pos1[1])]
+    
+    raise Exception('Impossible to compute similar directions, this should not be possible')
+
+
+def compute_similar_directions_5(pos1, pos2): 
+    """Given a start position and an end position, return similar alternative directions """
+    
+    if(pos1[0] == pos2[0]): # i was moving on the y axis, 
+        return [(pos1[0] - 1, pos1[1]), (pos1[0] + 1, pos1[1])]
+    if(pos1[1] == pos2[1]): # i was moving on the x axis, 
+        return [(pos1[0], pos1[1] - 1), (pos1[0], pos1[1] + 1)]
+    
+    if (pos1[0] < pos2[0] and pos1[1] < pos2[1]): # i was moving on the top right corner
+        return [(pos1[0] -1, pos1[1] + 1), (pos1[0] + 1, pos1[1] - 1)]
+    
+    if (pos1[0] < pos2[0] and pos1[1] > pos2[1]): # i was moving on the bottom right corner
+        return [(pos1[0] + 1, pos1[1] + 1), (pos1[0] - 1, pos1[1] - 1)]
+    
+    if (pos1[0] > pos2[0] and pos1[1] < pos2[1]): # i was moving on the top left corner
+        return [(pos1[0] + 1, pos1[1] + 1), (pos1[0] - 1, pos1[1] - 1)]
+    
+    if (pos1[0] > pos2[0] and pos1[1] > pos2[1]): # i was moving on the bottom left corner
+        return [(pos1[0] - 1, pos1[1] + 1), (pos1[0] + 1, pos1[1] -1)]
     
     raise Exception('Impossible to compute similar directions, this should not be possible')
 
@@ -175,13 +222,17 @@ def distance_to_nearest_hash(planimetry):
                 distances[(nx, ny)] = distances[(x, y)] + math.dist((nx, ny), (x, y))
                 queue.append((nx, ny))
 
-    
-
     return distances
     
-    distance_translated = {}
-    for k, v in distances.items():
-        distance_translated[n2m_c(matrix, k)] = v 
 
-    return distance_translated
+def value_to_html_color(value):
+    if value < 0.33:
+        return "red" 
+    if 0.33 <= value < 0.66:
+        return "orange" 
+    if value >= 0.66:
+        return "green" 
 
+
+  
+    

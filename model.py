@@ -5,12 +5,13 @@ import os
 import pickle
 from pathlib import Path
 from agent import StaticAgent, InformedPersonAgent, UninformedPersonAgent
+import numpy as np
 
 
 class BuildingModel(mesa.Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, path, perc_uninformed_agents, probability_optimal):
+    def __init__(self, N, path, perc_uninformed_agents, probability_optimal, alpha, beta, speed_mean, speed_variance):
         super().__init__()
         self.num_agents = N
         self.perc_uninformed_agents = perc_uninformed_agents
@@ -23,6 +24,10 @@ class BuildingModel(mesa.Model):
             height=self.height, 
             torus=False
         )
+        self.alpha = alpha
+        self.beta = beta
+        self.speed_mean = speed_mean
+        self.speed_variance = speed_variance
 
         self.schedule = mesa.time.RandomActivation(self)
         self.running = True
@@ -47,16 +52,25 @@ class BuildingModel(mesa.Model):
         # place the person agents
                 
         # uninformed agents
-        for i in range(int(self.perc_uninformed_agents * self.num_agents)):
+        number_of_uninformed_agents = int(self.perc_uninformed_agents * self.num_agents)
+        for i in range(number_of_uninformed_agents):
             pos = self.random.choice(list(self.grid.empties))
             a = UninformedPersonAgent(i + self.static_agent_count, self)
             self.schedule.add(a)
             self.grid.place_agent(a, pos)
 
         # informed agents
-        for i in range(int(( 1- self.perc_uninformed_agents) * self.num_agents)):
+        number_of_informed_agents = int((1 - self.perc_uninformed_agents) * self.num_agents)
+        for i in range(number_of_informed_agents):
             pos = self.random.choice(list(self.grid.empties))
-            a = InformedPersonAgent(i + self.static_agent_count, self, probability_optimal)
+            a = InformedPersonAgent(
+                i + self.static_agent_count, 
+                self, 
+                probability_optimal, 
+                alpha, 
+                beta, 
+                speed = max(0.1, np.random.normal(speed_mean, speed_variance)),
+            )
             self.schedule.add(a)
             self.grid.place_agent(a, pos)
 
@@ -71,9 +85,9 @@ class BuildingModel(mesa.Model):
         if os.path.exists(static_floor_field_path):
             self.static_floor_field = pickle.load(open(static_floor_field_path, 'rb'))
         else:
-            self.static_floor_field = utils.static_floor_field(self.planimetry, self.exits)
+            self.static_floor_field = utils.static_floor_field(self.planimetry, self.exits[0])
             pickle.dump(self.static_floor_field, open(static_floor_field_path, 'wb'))
-                        
+        
 
         self.wall_distance = utils.distance_to_nearest_hash(self.planimetry)
 

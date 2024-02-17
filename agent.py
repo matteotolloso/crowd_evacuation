@@ -14,11 +14,14 @@ class StaticAgent(mesa.Agent):
 
 
 class InformedPersonAgent(mesa.Agent):
-    def __init__(self, unique_id, model, probability_optimal):
+    def __init__(self, unique_id, model, probability_optimal, alpha, beta, speed):
         super().__init__(unique_id, model)
         self.type = 'InformedPersonAgent'
         self.direction = (0, 0)
-        self.probability_optimal = 0.5 # probability of moving to the optimal position
+        self.probability_optimal = probability_optimal# probability of moving to the optimal position
+        self.alpha = alpha
+        self.beta = beta
+        self.speed = speed
 
     def move_agent(self, new_pos):
         # compute the direction
@@ -28,12 +31,12 @@ class InformedPersonAgent(mesa.Agent):
             self.model.grid.remove_agent(self)
             self.model.schedule.remove(self)
 
-    def move_optimal_priority(self, optimal_position):
-        
-        similar_directions = utils.compute_similar_directions(self.pos, optimal_position)
-        similar_directions_walls = [(i, self.model.wall_distance[i]) for i in similar_directions]
-        similar_directions_walls.sort(key=lambda x: x[1], reverse=True)
-        similar_directions = [i[0] for i in similar_directions_walls]
+    def move_optimal_priority(self):
+
+        optimal_position = self.model.static_floor_field[self.pos]
+
+        similar_directions = utils.compute_similar_directions_3(self.pos, optimal_position)
+        similar_directions.sort(key=lambda x: self.model.wall_distance[x], reverse=True)
 
         if self.model.random.uniform(0, 1) < self.probability_optimal: 
             # i will try to move to the optimal first
@@ -48,14 +51,42 @@ class InformedPersonAgent(mesa.Agent):
                 return True
 
         return False
+    
+    def move_with_weights(self):
+        
+        if self.model.random.uniform(0, 1) > self.speed:
+            return True
+        
+        alpha = self.alpha
+        beta = self.beta
+        
+        next_pos = []
+        
+        optimal = self.model.static_floor_field[self.pos]
+        similar3 = utils.compute_similar_directions_3(self.pos, optimal)
+        self.model.random.shuffle(similar3)
+        similar5 = utils.compute_similar_directions_5(self.pos, optimal)
+        self.model.random.shuffle(similar5)
+
+        next_pos.append((optimal, beta * self.model.wall_distance[optimal] + alpha * 3 ))
+        for pos in similar3:
+            next_pos.append((pos, beta * self.model.wall_distance[pos] + alpha * 2))
+        for pos in similar5:
+            next_pos.append((pos, beta * self.model.wall_distance[pos] + alpha * 1))
+
+        next_pos.sort(key=lambda x: x[1], reverse=True)
+
+        for pos in next_pos:
+            if (self.model.grid.is_cell_empty(pos[0])):  # if it is empty, then I go
+                self.move_agent(pos[0])
+                return True
+        
+        return False
 
  
     def step(self):
 
-        # computed by A*
-        optimal_position = self.model.static_floor_field[self.pos]
-
-        is_moved = self.move_optimal_priority(optimal_position)
+        is_moved = self.move_with_weights()
 
         if not is_moved:
             pass
@@ -122,7 +153,7 @@ class UninformedPersonAgent(mesa.Agent):
             return
 
         # i'm here because the optimal cell is occupied, i will try similar directions 
-        similar_new_positions = utils.compute_similar_directions(self.pos, optimal_position)
+        similar_new_positions = utils.compute_similar_directions_3(self.pos, optimal_position)
 
         # random choice between the two similar cells
         self.model.random.shuffle(similar_new_positions)
