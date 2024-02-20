@@ -5,9 +5,8 @@ import mesa
 import pandas as pd
 from utils import value_to_html_color
 
-width = 132
-height = 188
-agents = 2000
+width = 140
+height = 190
 
 def agent_portrayal(agent):
     portrayal = {
@@ -46,15 +45,16 @@ grid = mesa.visualization.CanvasGrid(agent_portrayal, width, height, 1000, 1000)
  
 server = mesa.visualization.ModularServer(
     BuildingModel, [grid], "Building_model", 
-    {"N": agents, 
-     "path" : './dataset/charleston_road.txt',
-     "perc_uninformed_agents" : 0.05,
-     "probability_optimal" : 0.2,
-     "alpha" : 1,
-     "beta" : 0.5,
-     "speed_mean" : 0.7,
-     "speed_variance" : 0.2,
+    {  
+        "N": 2000, 
+        "perc_uninformed_agents" : 0.00,
+        "alpha" : 1,
+        "beta" : 0.5,
+        "speed_mean" : 0.7,
+        "speed_variance" : 0.2,
     }
 )
+
+
 server.port = 8521  # the default
 server.launch(open_browser=False)

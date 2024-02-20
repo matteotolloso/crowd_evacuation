@@ -12,17 +12,13 @@ class StaticAgent(mesa.Agent):
     def step(self):
         pass
 
-
-class InformedPersonAgent(mesa.Agent):
-    def __init__(self, unique_id, model, probability_optimal, alpha, beta, speed):
+class PersonAgent(mesa.Agent):
+    def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
-        self.type = 'InformedPersonAgent'
+        self.type = 'PersonAgent'
         self.direction = (0, 0)
-        self.probability_optimal = probability_optimal# probability of moving to the optimal position
-        self.alpha = alpha
-        self.beta = beta
-        self.speed = speed
-
+        self.is_active = True
+    
     def move_agent(self, new_pos):
         # compute the direction
         self.direction = utils.compute_direction(self.pos, new_pos)
@@ -30,27 +26,19 @@ class InformedPersonAgent(mesa.Agent):
         if new_pos in self.model.exits: # i'm the one on the exit, just disappear
             self.model.grid.remove_agent(self)
             self.model.schedule.remove(self)
+            self.is_active = False
+            self.model.active_agents -= 1
 
-    def move_optimal_priority(self):
 
-        optimal_position = self.model.static_floor_field[self.pos]
+class InformedPersonAgent(PersonAgent):
+    def __init__(self, unique_id, model, alpha, beta, speed):
+        super().__init__(unique_id, model)
+        self.type = 'InformedPersonAgent'
+        self.direction = (0, 0)
+        self.alpha = alpha
+        self.beta = beta
+        self.speed = speed
 
-        similar_directions = utils.compute_similar_directions_3(self.pos, optimal_position)
-        similar_directions.sort(key=lambda x: self.model.wall_distance[x], reverse=True)
-
-        if self.model.random.uniform(0, 1) < self.probability_optimal: 
-            # i will try to move to the optimal first
-            candidates = [optimal_position] + similar_directions
-        else:
-            # i will try to move to similar first
-            candidates = similar_directions + [optimal_position]
-
-        for candidate in candidates:
-            if (self.model.grid.is_cell_empty(candidate)):  # if it is empty, then I go
-                self.move_agent(candidate)
-                return True
-
-        return False
     
     def move_with_weights(self):
         
@@ -86,6 +74,9 @@ class InformedPersonAgent(mesa.Agent):
  
     def step(self):
 
+        if not self.is_active:
+            return
+
         is_moved = self.move_with_weights()
 
         if not is_moved:
@@ -95,7 +86,7 @@ class InformedPersonAgent(mesa.Agent):
         return
     
 
-class UninformedPersonAgent(mesa.Agent):
+class UninformedPersonAgent(PersonAgent):
     def __init__(self, unique_id, model):
         super().__init__(unique_id, model)
         self.type = 'UninformedPersonAgent'
@@ -103,16 +94,11 @@ class UninformedPersonAgent(mesa.Agent):
             self.model.random.choice([-1, 0, 1]), 
             self.model.random.choice([-1, 0, 1]), 
         )
-
-    def move_agent(self, new_pos):
-        # compute the direction
-        self.direction = utils.compute_direction(self.pos, new_pos)
-        self.model.grid.move_agent(self, new_pos)
-        if new_pos in self.model.exits: # i'm the one on the exit, just disappear
-            self.model.grid.remove_agent(self)
-            self.model.schedule.remove(self)
     
     def step(self):
+
+        if not self.is_active:
+            return
 
         # get the other agents around me
         neighbors = self.model.grid.get_neighbors(

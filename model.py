@@ -11,7 +11,7 @@ import numpy as np
 class BuildingModel(mesa.Model):
     """A model with some number of agents."""
 
-    def __init__(self, N, path, perc_uninformed_agents, probability_optimal, alpha, beta, speed_mean, speed_variance):
+    def __init__(self, N, perc_uninformed_agents, alpha, beta, speed_mean, speed_variance, path = './dataset/charleston_road.txt'):
         super().__init__()
         self.num_agents = N
         self.perc_uninformed_agents = perc_uninformed_agents
@@ -28,6 +28,7 @@ class BuildingModel(mesa.Model):
         self.beta = beta
         self.speed_mean = speed_mean
         self.speed_variance = speed_variance
+        self.active_agents = 0
 
         self.schedule = mesa.time.RandomActivation(self)
         self.running = True
@@ -58,6 +59,7 @@ class BuildingModel(mesa.Model):
             a = UninformedPersonAgent(i + self.static_agent_count, self)
             self.schedule.add(a)
             self.grid.place_agent(a, pos)
+            self.active_agents += 1
 
         # informed agents
         number_of_informed_agents = int((1 - self.perc_uninformed_agents) * self.num_agents)
@@ -65,21 +67,16 @@ class BuildingModel(mesa.Model):
             pos = self.random.choice(list(self.grid.empties))
             a = InformedPersonAgent(
                 i + self.static_agent_count, 
-                self, 
-                probability_optimal, 
+                self,  
                 alpha, 
                 beta, 
                 speed = max(0.1, np.random.normal(speed_mean, speed_variance)),
             )
             self.schedule.add(a)
             self.grid.place_agent(a, pos)
+            self.active_agents += 1
 
         self.grid.remove_agent(exit_agent)
-
-        # data collector
-        self.datacollector = mesa.DataCollector(
-            model_reporters={"Test1": lambda x:0}, agent_reporters={"Test2": lambda x:0}
-        )
 
         static_floor_field_path = f'./cache/static_floor_field_{Path(self.path).stem}.pkl'
         if os.path.exists(static_floor_field_path):
@@ -88,15 +85,21 @@ class BuildingModel(mesa.Model):
             self.static_floor_field = utils.static_floor_field(self.planimetry, self.exits[0])
             pickle.dump(self.static_floor_field, open(static_floor_field_path, 'wb'))
         
-
         self.wall_distance = utils.distance_to_nearest_hash(self.planimetry)
 
-        print(len(self.wall_distance.keys()))
-        print(self.height * self.width )
+        
+        # data collector
+        self.datacollector = mesa.DataCollector(
+            model_reporters=
+            {
+                "Active_agents": "active_agents"
+            }, 
+        )
 
         
     def step(self):
         self.datacollector.collect(self)
         self.schedule.step()
-        if self.schedule.get_agent_count() == 0:
-            self.running = False
+        # TODO stop the simulation
+        # if self.active_agents == 0:
+        #     self.running = False
