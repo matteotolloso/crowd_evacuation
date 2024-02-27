@@ -1,12 +1,9 @@
 from model import BuildingModel
-import seaborn as sns
-import numpy as np
 import mesa
-import pandas as pd
 from utils import value_to_html_color
 
-width = 140
-height = 190
+width = 560
+height = 410
 
 def agent_portrayal(agent):
     portrayal = {
@@ -14,7 +11,6 @@ def agent_portrayal(agent):
         "Filled": "true",
         "Layer": 0,
     }
-    # change the color based on the agent.speed
 
     if agent.type == "InformedPersonAgent":
         portrayal["Color"] = value_to_html_color(agent.speed)
@@ -26,8 +22,6 @@ def agent_portrayal(agent):
         portrayal["Shape"] = "rect"
         portrayal["w"] = 1
         portrayal["h"] = 1
-
-        # return None # TODO remove
     
     if agent.type == "UninformedPersonAgent":
         portrayal["Color"] = "blue"
@@ -46,15 +40,15 @@ grid = mesa.visualization.CanvasGrid(agent_portrayal, width, height, 1000, 1000)
 server = mesa.visualization.ModularServer(
     BuildingModel, [grid], "Building_model", 
     {  
-        "N": 2000, 
-        "perc_uninformed_agents" : 0.00,
-        "alpha" : 1,
-        "beta" : 0.5,
+        "N": 3000, 
+        "perc_uninformed_agents" : 0.2,
+        "alpha" : 0.8,
+        "beta" : 1,
         "speed_mean" : 0.7,
         "speed_variance" : 0.2,
+        "path" : "./dataset/opera_teather.txt",
     }
 )
 
-
-server.port = 8521  # the default
+server.port = 8521
 server.launch(open_browser=False)

@@ -21,6 +21,32 @@ def n2m_c(np_matrix, n_pos):
 
 
 def read_planimetry(path):
+    """
+    Read planimetry from a text file.
+
+    Parameters:
+        path (str): Path to the planimetry text file.
+
+    Returns:
+        numpy.ndarray: Numpy array representing the planimetry matrix.
+
+    Reads the planimetry from a text file and converts it into a numpy array.
+    Each character in the text file represents a cell in the planimetry matrix.
+
+    Example:
+    If the text file contains the following:
+    ```
+    ####
+    #  e
+    ####
+    ```
+    The resulting numpy array would be:
+    ```
+    [['#' '#' '#' '#']
+     ['#' ' ' ' ' 'e']
+     ['#' '#' '#' '#']]
+    ```
+    """
     
     with open(path, "r") as f:
         lines = f.readlines()
@@ -32,11 +58,57 @@ def read_planimetry(path):
     
 
 class AStar:
+    """
+    A* pathfinding algorithm implementation for 2D grid navigation.
+
+    Attributes:
+        h (function): Heuristic function for estimating the cost from a given point to the goal.
+        planimetry (numpy.ndarray): 2D grid representing the environment planimetry.
+
+    Methods:
+        __init__(self, planimetry, name: str = "AStar"):
+            Initializes the AStar instance with the specified planimetry and heuristic function.
+
+        __call__(self, start, end):
+            Finds a path from the start point to the end point using the A* algorithm.
+
+        get_valid_moves(self, current):
+            Returns a list of valid neighboring positions for a given position on the grid.
+
+        build_path(parent, target):
+            Builds the path from the start to the target using the parent dictionary.
+
+    Notes:
+        - The planimetry should be a 2D grid represented as a numpy array where '#' represents walls.
+        - The heuristic function 'h' estimates the cost from a given point to the goal.
+        - The A* algorithm explores possible paths based on the provided planimetry and heuristic.
+    """
     def __init__(self, planimetry, name: str = "AStar"):
+        """
+        Initialize the AStar instance.
+
+        Parameters:
+            planimetry (numpy.ndarray): 2D grid representing the environment planimetry.
+            name (str): Name of the AStar instance (default: "AStar").
+        """
         self.h = lambda start, end: math.dist(start, end)
         self.planimetry = planimetry
 
     def __call__(self, start, end):
+        
+        """
+        Finds a path from the start point to the end point using the A* algorithm.
+
+        Parameters:
+            start (tuple): Coordinates of the starting point.
+            end (tuple): Coordinates of the target point.
+
+        Returns:
+            tuple: A tuple containing a boolean indicating success and a list representing the path.
+
+        If a path is found, the boolean is True, and the path is returned.
+        If no path is found, the boolean is False, and the path is None.
+        """
 
         # initialize open and close list
         open_list = queue.PriorityQueue()
@@ -90,6 +162,15 @@ class AStar:
         return False, None
     
     def get_valid_moves(self, current):
+        """
+        Returns a list of valid neighboring positions for a given position on the grid.
+
+        Parameters:
+            current (tuple): Coordinates of the current position.
+
+        Returns:
+            list: List of valid neighboring positions.
+        """
         moves = [(0, -1), (0, 1), (-1, 0), (1, 0), (-1, -1), (-1, 1), (1, -1), (1, 1)] # Adjacent squares 
         valid_moves = []
         for move in moves:
@@ -99,8 +180,17 @@ class AStar:
             valid_moves.append(new_position)
         return valid_moves
 
-    @staticmethod
     def build_path(parent, target):
+        """
+        Builds the path from the start to the target using the parent dictionary.
+
+        Parameters:
+            parent (dict): Dictionary containing the parent-child relationships.
+            target (tuple): Coordinates of the target position.
+
+        Returns:
+            list: List representing the path from start to target.
+        """
         path = []
         while target is not None:
             path.append(target)
@@ -109,6 +199,24 @@ class AStar:
         return path
     
 def static_floor_field(planimetry, exit):
+    """
+    Generates a static floor field for pathfinding in a given planimetry.
+
+    Parameters:
+        planimetry (numpy.ndarray): 2D grid representing the environment planimetry.
+        exit (tuple): Coordinates of the exit in the planimetry.
+
+    Returns:
+        dict: Dictionary mapping positions to their next positions in the static floor field.
+
+    Computes a static floor field for pathfinding using the A* algorithm.
+    The static floor field is a dictionary where each position maps to its next position in the path.
+    The generated field facilitates efficient pathfinding from any point to the exit.
+
+    Note:
+    The planimetry should be a 2D grid represented as a numpy array where '.' represents open floor space,
+    '#' represents walls, and the exit is specified by its coordinates.
+    """
     astar = AStar(planimetry)
     rows, cols = planimetry.shape
     
@@ -180,23 +288,25 @@ def compute_direction(pos1, pos2):
     
     return [pos2[0] - pos1[0], pos2[1] - pos1[1]]
 
-def compute_sff(planimetry, exits):
-    static_floor_field = {}
-    astar = AStar(planimetry)
-    for j in range(planimetry.shape[0]):  
-        for i in range(planimetry.shape[1]):
-            if m2n_v(planimetry, (i, j)) == '.' and  (i, j) not in static_floor_field.keys():
-                _, path = astar(
-                    start = (i, j), 
-                    end = exits[0]
-                )    
-                for iter in range(len(path) -1):
-                    static_floor_field[path[iter]] = path[iter + 1]
-    static_floor_field[exits[0]] = exits[0]
-
-    return static_floor_field
 
 def distance_to_nearest_hash(planimetry):
+    """
+    Computes the distance from each open cell to the nearest '#' (hash) cell in the planimetry.
+
+    Parameters:
+        planimetry (numpy.ndarray): 2D grid representing the environment planimetry.
+
+    Returns:
+        dict: Dictionary mapping positions to their distances to the nearest '#' cell.
+
+    Computes the distance from each open cell ('.') to the nearest '#' (hash) cell using breadth-first search.
+    The function returns a dictionary where each position maps to its distance to the nearest '#' cell.
+
+    Note:
+    The planimetry should be a 2D grid represented as a numpy array where '.' represents open floor space,
+    and '#' represents walls.
+
+    """
     rows, cols = planimetry.shape
     distances = {}
 
@@ -226,6 +336,15 @@ def distance_to_nearest_hash(planimetry):
     
 
 def value_to_html_color(value):
+    """
+    Converts a numerical value to an HTML color representation based on predefined thresholds.
+
+    Parameters:
+        value (float): Numerical value to be converted.
+
+    Returns:
+        str: HTML color representation.
+    """
     if value < 0.33:
         return "red" 
     if 0.33 <= value < 0.66:
@@ -234,5 +353,43 @@ def value_to_html_color(value):
         return "green" 
 
 
-  
+def compute_proportions(model):
+    """
+    Computes the proportions of different types of agents in the model.
+
+    Parameters:
+        model (BuildingModel): Reference to the building evacuation model.
+
+    Returns:
+        dict: Dictionary containing the count of each agent type.
+
+    Computes and returns a dictionary containing the count of different types of agents in the model.
+    The agent types include 'slow', 'medium', 'fast' for InformedPersonAgents, and 'uninformed' for UninformedPersonAgents.
+    The count of 'active' agents is also included.
+    """
+    count = {
+        "slow": 0,
+        "medium" : 0,
+        "fast": 0, 
+        "uninformed": 0,
+        "active" : model.active_agents,
+    }
+
+    for agent in model.schedule.agents:
+        
+        if (agent.type == 'InformedPersonAgent'):
+           
+            if agent.speed < 0.33:
+                count["slow"] += 1
+            if 0.33 <= agent.speed < 0.66:
+                count["medium"] += 1
+            if agent.speed >= 0.66:
+                count["fast"] += 1
+        else:
+            
+            count["uninformed"] += 1
+     
+    
+    return count
+    
     
