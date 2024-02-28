@@ -180,7 +180,7 @@ class AStar:
             valid_moves.append(new_position)
         return valid_moves
 
-    def build_path(parent, target):
+    def build_path(self, parent, target):
         """
         Builds the path from the start to the target using the parent dictionary.
 
