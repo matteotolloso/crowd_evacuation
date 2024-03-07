@@ -2,8 +2,8 @@ from model import BuildingModel
 import mesa
 from utils import value_to_html_color
 
-width = 560
-height = 410
+width = 135
+height = 190
 
 def agent_portrayal(agent):
     portrayal = {
@@ -46,7 +46,7 @@ server = mesa.visualization.ModularServer(
         "beta" : 1,
         "speed_mean" : 0.7,
         "speed_variance" : 0.2,
-        "path" : "./dataset/opera_teather.txt",
+        # "path" : "./dataset/opera_teather.txt",
     }
 )
 
