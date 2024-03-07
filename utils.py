@@ -229,6 +229,10 @@ def static_floor_field(planimetry, exit):
                     start = (i, j), 
                     end = exit
                 )
+
+                if path == None:
+                    static_floor_field[(i, j)] = (i, j)
+                    continue
                     
                 for iter in range(len(path) -1):
                     static_floor_field[path[iter]] = path[iter + 1]

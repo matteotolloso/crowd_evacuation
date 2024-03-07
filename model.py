@@ -62,6 +62,7 @@ class BuildingModel(mesa.Model):
         self.planimetry = utils.read_planimetry(path)
         self.width = self.planimetry.shape[1] # for numpy the width is the number of columns
         self.height = self.planimetry.shape[0]
+        print(f'width: {self.width}, height: {self.height}')
         self.grid = mesa.space.SingleGrid(
             width=self.width, 
             height=self.height, 
