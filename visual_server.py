@@ -42,8 +42,8 @@ server = mesa.visualization.ModularServer(
     {  
         "N": 3000, 
         "perc_uninformed_agents" : 0.2,
-        "alpha" : 0.8,
-        "beta" : 1,
+        "alpha" : 1,
+        "beta" : 0.7,
         "speed_mean" : 0.7,
         "speed_variance" : 0.2,
         # "path" : "./dataset/opera_teather.txt",
